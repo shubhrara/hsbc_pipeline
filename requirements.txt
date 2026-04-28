@@ -1,0 +1,6 @@
+google-cloud-bigquery
+streamlit
+pandas
+faker
+db-dtypes
+pyarrow
