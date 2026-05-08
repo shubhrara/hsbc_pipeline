@@ -1,10 +1,15 @@
-import time, queue
+from google.cloud import pubsub_v1
+from google.oauth2 import service_account
+from config import PROJECT_ID, CREDENTIALS_PATH
+import json, time, random
 from datetime import datetime, timezone
 from faker import Faker
-import random
 
 fake = Faker()
-message_queue = queue.Queue()
+credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_PATH)
+publisher = pubsub_v1.PublisherClient(credentials=credentials)
+
+topic_path = publisher.topic_path(PROJECT_ID, "sensor_data")
 
 def generate_iot_data():
     return {
@@ -33,9 +38,11 @@ def generate_log_data():
     }
 
 def publish(stop_event):
-    print("📡 Publisher started — streaming data...")
+    print("📡 Publisher started — sending to real GCP Pub/Sub...")
     while not stop_event.is_set():
         msg = generate_iot_data() if random.random() > 0.5 else generate_log_data()
-        message_queue.put(msg)
-        print(f"  → Published: {msg['data_type']} from {msg['device_id']}")
+        data = json.dumps(msg).encode("utf-8")
+        future = publisher.publish(topic_path, data)
+        future.result()  # wait for confirmation
+        print(f"  → Published to GCP: {msg['data_type']} from {msg['device_id']}")
         time.sleep(1)

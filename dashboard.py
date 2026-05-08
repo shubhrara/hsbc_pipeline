@@ -13,11 +13,12 @@ credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_
 client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
 
 @st.cache_data(ttl=5)
+@st.cache_data(ttl=5)
 def fetch_data():
     query = f"""
         SELECT * FROM `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`
-        ORDER BY timestamp DESC
-        LIMIT 500
+        WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 10 MINUTE)
+        ORDER BY timestamp ASC
     """
     return client.query(query).to_dataframe()
 
